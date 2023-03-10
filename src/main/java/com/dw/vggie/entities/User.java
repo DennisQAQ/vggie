@@ -1,5 +1,4 @@
 package com.dw.vggie.entities;
-
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.Date;

@@ -3,11 +3,14 @@ package com.dw.vggie.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.dw.vggie.common.R;
+import com.dw.vggie.dto.DishDto;
 import com.dw.vggie.dto.SetmealDto;
 import com.dw.vggie.entities.Category;
+import com.dw.vggie.entities.Dish;
 import com.dw.vggie.entities.Setmeal;
 import com.dw.vggie.entities.SetmealDish;
 import com.dw.vggie.service.CategoryService;
+import com.dw.vggie.service.DishService;
 import com.dw.vggie.service.SetmealDishService;
 import com.dw.vggie.service.SetmealService;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +36,8 @@ public class SetmealController {
     private SetmealDishService setmealDishService;
     @Autowired
     private CategoryService categoryService;
+    @Autowired
+    private DishService dishService;
     @PostMapping
     public R<String> save(@RequestBody SetmealDto setmealDto){
         log.info("套餐信息{}",setmealDto);
@@ -139,5 +144,48 @@ public class SetmealController {
         setmealDishService.saveBatch(setmealDishes);
         setmealService.updateById(setmealDto);
         return R.success("套餐修改成功！");
+    }
+
+    /**
+     * 根据条件查询套餐数据
+     * @return
+     */
+    @GetMapping("/list")
+    public R<List<Setmeal>> list(Setmeal setmeal){
+        LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(null!=setmeal.getCategoryId(),Setmeal::getCategoryId,setmeal.getCategoryId());
+        queryWrapper.eq(null!=setmeal.getStatus(),Setmeal::getStatus,setmeal.getStatus());
+
+        queryWrapper.orderByDesc(Setmeal::getUpdateTime);
+
+        List<Setmeal> setmealList = setmealService.list(queryWrapper);
+        return R.success(setmealList);
+
+    }
+
+    /**
+     * 移动端点击套餐图片查看套餐具体内容
+     * @param setmealID
+     * @return
+     */
+    @GetMapping("/dish/{id}")
+    public R<List<DishDto>> checkDishDetail(@PathVariable("id") Long setmealID){
+        LambdaQueryWrapper <SetmealDish> queryWrapper =new LambdaQueryWrapper<>();
+        queryWrapper.eq(SetmealDish::getSetmealId,setmealID);
+        List<SetmealDish> list = setmealDishService.list(queryWrapper);
+
+        List<DishDto> dishDtos = list.stream().map((setmealDish) -> {
+            DishDto dishDto = new DishDto();
+            //其实这个BeanUtils的拷贝是浅拷贝，这里要注意一下
+            BeanUtils.copyProperties(setmealDish, dishDto);
+            //这里是为了把套餐中的菜品的基本信息填充到dto中，比如菜品描述，菜品图片等菜品的基本信息
+            Long dishId = setmealDish.getDishId();
+            Dish dish = dishService.getById(dishId);
+            BeanUtils.copyProperties(dish, dishDto);
+            return dishDto;
+        }).collect(Collectors.toList());
+
+        return R.success(dishDtos);
+
     }
 }

@@ -9,6 +9,7 @@ import java.util.List;
 @Data
 public class DishDto extends Dish {
 
+    //展示菜品口味
     private List<DishFlavor> flavors = new ArrayList<>();
 
     private String categoryName;

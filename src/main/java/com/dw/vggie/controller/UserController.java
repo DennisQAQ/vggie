@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Map;
 
@@ -64,7 +65,7 @@ public class UserController {
         String phone = map.get("phone").toString();
         //2.获取验证码
         String code = map.get("code").toString();
-        
+//        map.get("name").toString();
         //3.从session中获取验证码
         Object codeInSession = session.getAttribute(phone);
         //4.进行验证码比对，（页面提交的验证码和session中保存的验证码比对）
@@ -77,12 +78,24 @@ public class UserController {
             if (users ==null){
                  users = new User();
                 users.setPhone(phone);
+
                 users.setStatus(1);
                 userService.save(users);
             }
-            session.setAttribute("user",users);
+            session.setAttribute("user",users.getId());
             return R.success(users);
         }
         return R.error("登录失败");
+    }
+
+    /**
+     * 用户退出登录
+     * @param request
+     * @return
+     */
+    @PostMapping("/loginout")
+    public R<String> loginout(HttpServletRequest request){
+        request.getSession().removeAttribute("user");
+        return R.success("用户注销成功！返回登陆页面");
     }
 }
